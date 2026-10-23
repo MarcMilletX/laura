@@ -2,6 +2,8 @@
 
 **LAURA lee en voz alta, con tu voz clonada en [Cartesia](https://cartesia.ai), las frases que aparecen en cualquier pestaña de tu navegador.**
 
+👉 **Úsala directamente en el navegador: [marcmilletx.github.io/laura](https://marcmilletx.github.io/laura/)** (con Chrome, Edge o Brave)
+
 Marcas con el ratón la zona de la pantalla donde va a salir el texto, como cuando haces una captura, y en cuanto aparece una frase nueva LAURA la lee con tu voz. Es una sola página web: no hay que instalar nada.
 
 ![LAURA leyendo una frase de la zona marcada](docs/captura.png)
@@ -25,12 +27,12 @@ En los dos casos la que habla siempre es tu voz de Cartesia.
 
 ## Empezar en 5 pasos
 
-1. **Descarga** este repositorio: botón verde **Code → Download ZIP**, y descomprímelo.
-2. **Rellena `claves.env`** con un editor de texto. Dentro está explicado qué va en cada línea y dónde se saca:
+1. **Descarga** la plantilla [`claves.env`](claves.env) (o todo el repositorio con **Code → Download ZIP** si prefieres usarla sin conexión).
+2. **Rellénala** con un editor de texto. Dentro está explicado qué va en cada línea y dónde se saca:
    - `CARTESIA_VOICE_ID`: el código de tu voz en Cartesia.
    - `CARTESIA_API_KEY`: tu clave de la API de Cartesia.
    - `GEMINI_API_KEY`: opcional, solo para el modo «Lo que yo le diga».
-3. **Abre `index.html`** con **Chrome, Edge o Brave**. Safari y Firefox no dejan elegir una pestaña concreta.
+3. **Abre [la página](https://marcmilletx.github.io/laura/)** (o tu `index.html` descargado) con **Chrome, Edge o Brave**. Safari y Firefox no dejan elegir una pestaña concreta.
 4. Pulsa **Cargar claves** y elige tu `claves.env`. Se pueden recordar en el navegador para no cargarlas cada vez.
 5. Pulsa **Empezar** (o **Cmd + G** / **Ctrl + G**), elige la pestaña donde saldrá la frase y marca la zona. Cuando aparezca, LAURA la lee.
 
