@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LAURA, lectora con voz</title>
+  <meta name="description" content="Lee en voz alta, con tu propia voz de Cartesia, el texto que aparece en otra ventana.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='%23C42D26'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23FFD7D3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;750&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="lamp" aria-hidden="true"></span>
+      <h1>LAURA</h1>
+    </div>
+    <p class="lede">Lee en voz alta, con tu voz de Cartesia, el texto que aparece en otra ventana.</p>
+  </header>
+
+  <p class="browser-warn" id="browserWarn" hidden></p>
+
+  <main class="layout">
+    <div class="steps">
+
+      <section class="step" id="stepVoz" aria-labelledby="h-voz">
+        <h2 id="h-voz"><span class="num">1</span>Tu voz</h2>
+
+        <ul class="creds" id="creds" aria-live="polite">
+          <li id="credVoice" data-state="missing"><span class="dot" aria-hidden="true"></span><span class="cred-text">Falta el código de la voz</span></li>
+          <li id="credKey" data-state="missing"><span class="dot" aria-hidden="true"></span><span class="cred-text">Falta la clave de Cartesia</span></li>
+          <li id="credGoogle" data-state="optional"><span class="dot" aria-hidden="true"></span><span class="cred-text">Clave de Google sin poner</span></li>
+        </ul>
+        <div class="buttons">
+          <button type="button" id="loadKeys">Cargar claves</button>
+          <button type="button" id="forgetKeys" class="ghost">Olvidar claves</button>
+        </div>
+        <input type="file" id="keysFile" hidden>
+        <p class="hint" id="keysInfo">Elige tu archivo de claves (claves.env o .env) o arrástralo a este recuadro.</p>
+        <label class="check">
+          <input type="checkbox" id="rememberKeys" checked>
+          <span>Recordar las claves en este navegador</span>
+        </label>
+
+        <div class="pair">
+          <label class="field">
+            <span class="label">Velocidad <output id="speedOut" for="speed">1,00×</output></span>
+            <input type="range" id="speed" min="0.6" max="1.5" step="0.05" value="1">
+          </label>
+          <label class="field">
+            <span class="label">Volumen <output id="volumeOut" for="volume">1,0×</output></span>
+            <input type="range" id="volume" min="0.5" max="2" step="0.1" value="1">
+          </label>
+        </div>
+
+        <div class="test-row">
+          <input id="testText" type="text" value="Hola, así suena mi voz." aria-label="Frase de prueba">
+          <button type="button" id="testVoice">Probar voz</button>
+        </div>
+
+        <details>
+          <summary>Más ajustes de voz</summary>
+          <label class="field">
+            <span class="label">Idioma</span>
+            <select id="language">
+              <option value="es">Español</option>
+              <option value="en">Inglés</option>
+              <option value="fr">Francés</option>
+              <option value="it">Italiano</option>
+              <option value="pt">Portugués</option>
+              <option value="de">Alemán</option>
+            </select>
+            <span class="hint">El idioma en que habla la voz y en el que se reconoce el texto de la pantalla.</span>
+          </label>
+          <label class="field">
+            <span class="label">Emoción</span>
+            <select id="emotion">
+              <option value="">La de tu grabación</option>
+              <option value="calm">Calma</option>
+              <option value="content">Contenta</option>
+              <option value="sad">Triste</option>
+              <option value="angry">Enfadada</option>
+              <option value="scared">Asustada</option>
+            </select>
+            <span class="hint">Cartesia la aplica mejor en inglés; en español puede notarse poco.</span>
+          </label>
+          <label class="field">
+            <span class="label">Modelo de Cartesia</span>
+            <input id="model" type="text" value="sonic-3.6" spellcheck="false">
+          </label>
+        </details>
+      </section>
+
+      <section class="step" aria-labelledby="h-ventana">
+        <h2 id="h-ventana"><span class="num">2</span>La ventana que hay que leer</h2>
+        <p class="text">Elige la pestaña o ventana donde aparecerá el texto. Después marca la zona donde saldrá la frase, como cuando haces una captura con Cmd + Mayúsculas + 4.</p>
+        <div class="buttons">
+          <button type="button" id="pickWindow">Elegir pestaña o ventana</button>
+          <button type="button" id="markZone" class="ghost" disabled>Marcar zona</button>
+          <button type="button" id="clearZone" class="ghost">Usar toda la ventana</button>
+        </div>
+        <p id="zoneInfo" class="hint">Sin zona marcada: se vigila toda la ventana.</p>
+      </section>
+
+      <section class="step" aria-labelledby="h-modo">
+        <h2 id="h-modo"><span class="num">3</span>Qué tiene que leer</h2>
+
+        <fieldset class="modes">
+          <legend class="sr-only">Modo de lectura</legend>
+          <label class="mode">
+            <input type="radio" name="mode" value="zona" checked>
+            <span><strong>Leer cada frase nueva que aparezca en la zona</strong>No hace falta escribir nada. Gratis y sin IA: el texto se reconoce en tu ordenador.</span>
+          </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="ia">
+            <span><strong>Lo que yo le diga, con Google Gemini</strong>Escribes una instrucción y la IA decide qué leer. Usa la clave gratuita de Google de tu archivo de claves.</span>
+          </label>
+        </fieldset>
+
+        <div id="opts-zona" class="mode-opts">
+          <label class="check">
+            <input type="checkbox" id="onlyLanguage" checked>
+            <span id="onlyLanguageLabel">Leer solo frases en español</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="readExisting">
+            <span>Leer también el texto que ya hay al empezar</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="onlyNewLines" checked>
+            <span>Leer solo las líneas nuevas, sin repetir las que siguen en pantalla</span>
+          </label>
+          <label class="field">
+            <span class="label">Añadir al final de cada lectura</span>
+            <input id="suffix" type="text" placeholder="Opcional. Por ejemplo: Amén.">
+          </label>
+          <details>
+            <summary>Ajustes finos</summary>
+            <label class="field">
+              <span class="label">Esperar a que el texto termine de aparecer <output id="settleOut" for="settleMs">0,7 s</output></span>
+              <input type="range" id="settleMs" min="200" max="3000" step="100" value="700">
+            </label>
+            <label class="field">
+              <span class="label">Sensibilidad a los cambios <output id="sensitivityOut" for="sensitivity">6</output></span>
+              <input type="range" id="sensitivity" min="1" max="10" step="1" value="6">
+              <span class="hint">Súbela si no reacciona a frases pequeñas; bájala si lee cosas que no tocan.</span>
+            </label>
+            <label class="field">
+              <span class="label">Seguridad mínima al reconocer letras <output id="minConfidenceOut" for="minConfidence">55</output></span>
+              <input type="range" id="minConfidence" min="0" max="90" step="5" value="55">
+              <span class="hint">Más alto descarta más basura, pero puede saltarse frases con letras raras.</span>
+            </label>
+            <label class="field">
+              <span class="label">Mínimo de palabras para que cuente como frase</span>
+              <input type="number" id="minWords" min="1" max="20" value="3">
+              <span class="hint">Así no lee rótulos sueltos como «Create» o «Library».</span>
+            </label>
+            <label class="field">
+              <span class="label">Ignorar líneas con menos letras que</span>
+              <input type="number" id="minChars" min="1" max="50" value="3">
+            </label>
+          </details>
+        </div>
+
+        <div id="opts-ia" class="mode-opts" hidden>
+          <label class="field">
+            <span class="label">Tu instrucción</span>
+            <textarea id="instruction" rows="4" placeholder="Ejemplo: en unos segundos aparecerá una frase en el centro de la web. Léela en voz alta, despacio."></textarea>
+          </label>
+          <p class="notice">En el plan gratis, Google puede usar lo que le envías para mejorar sus productos, y alguna persona podría revisarlo. No lo uses con información privada en pantalla.</p>
+          <details>
+            <summary>Ajustes de Gemini</summary>
+            <label class="field">
+              <span class="label">Modelo</span>
+              <input id="geminiModel" type="text" list="geminiModels" value="gemini-3.5-flash-lite" spellcheck="false">
+              <datalist id="geminiModels"></datalist>
+            </label>
+            <div class="buttons">
+              <button type="button" id="loadModels" class="ghost small">Ver los modelos de mi clave</button>
+            </div>
+            <p id="modelsInfo" class="hint"></p>
+            <label class="field">
+              <span class="label">Tiempo mínimo entre consultas <output id="geminiGapOut" for="geminiGap">4 s</output></span>
+              <input type="range" id="geminiGap" min="2" max="30" step="1" value="4">
+              <span class="hint">El plan gratis limita las consultas por minuto. Con 4 segundos no deberías pasarte.</span>
+            </label>
+          </details>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="onlyOne" checked>
+          <span>Leer una sola frase y parar</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="interrupt">
+          <span>Cortar la lectura en curso si aparece texto nuevo</span>
+        </label>
+      </section>
+    </div>
+
+    <section class="live" aria-label="Vista en directo">
+      <div class="onair" id="onair" data-state="idle" role="status" aria-live="polite">
+        <span class="lamp" aria-hidden="true"></span>
+        <span id="statusText">Parada</span>
+      </div>
+      <p id="aiNote" class="hint ai-note" hidden></p>
+
+      <div class="preview" id="preview">
+        <canvas id="previewCanvas" width="640" height="360"></canvas>
+        <div class="zone" id="zoneBox" hidden></div>
+        <div class="preview-empty" id="previewEmpty">
+          <p>Aquí verás la ventana elegida.</p>
+          <p>Arrastra encima para marcar la zona que hay que leer.</p>
+        </div>
+      </div>
+
+      <p id="message" class="message" role="alert" hidden></p>
+
+      <div class="controls">
+        <button type="button" id="startBtn" class="primary">Empezar</button>
+        <button type="button" id="stopBtn" disabled>Parar</button>
+      </div>
+      <p class="hint shortcut" id="shortcutHint">Atajo para empezar y parar: Cmd + G, con LAURA delante.</p>
+
+      <div class="log-head">
+        <h2>Lo que se ha leído</h2>
+        <button type="button" id="clearLog" class="ghost small">Borrar</button>
+      </div>
+      <ol id="log" class="log"></ol>
+      <p id="logEmpty" class="hint log-empty">Todavía no se ha leído nada.</p>
+    </section>
+  </main>
+
+  <div class="picker" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <div class="picker-bar">
+      <p id="pickerTitle"><strong>Marca la zona donde saldrá la frase.</strong> Arrastra con el ratón, como con Cmd + Mayúsculas + 4. Intro para aceptar, Esc para cancelar.</p>
+      <div class="picker-actions">
+        <button type="button" id="pickerAll" class="ghost">Usar toda la ventana</button>
+        <button type="button" id="pickerCancel" class="ghost">Cancelar</button>
+        <button type="button" id="pickerOk" disabled>Aceptar</button>
+      </div>
+    </div>
+    <div class="picker-stage" id="pickerStage">
+      <div class="picker-frame" id="pickerFrame">
+        <canvas id="pickerCanvas" width="16" height="9"></canvas>
+        <div class="picker-rect" id="pickerRect" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <p>Tus claves se quedan en este navegador y solo se envían a Cartesia y, si usas el modo con instrucciones, a Google. En el modo sin IA, la imagen de la ventana no sale de tu ordenador: solo se envía a Cartesia el texto que hay que leer.</p>
+    <p class="credit">LAURA, de Marc Millet (<a href="https://marcmillet.com" target="_blank" rel="noopener">marcmillet.com</a>). Licencia <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">PolyForm Noncommercial 1.0.0</a>: uso no comercial y citando al autor.</p>
+  </footer>
+</body>
+</html>

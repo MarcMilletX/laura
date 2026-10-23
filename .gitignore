@@ -1,0 +1,5 @@
+# Archivos con claves de verdad: no se suben nunca
+.env
+mis-claves.env
+*.local.env
+.DS_Store
